@@ -6,12 +6,8 @@
 #include "globals.h"
 
 #include <stdint.h>
+#include <stdio.h>
 #include <stdbool.h>
-
-unsigned int ui_prepro(const bagl_element_t *element);
-void get_public_key(uint32_t accountNumber, uint8_t* publicKeyArray);
-void get_private_key(uint32_t accountNumber, cx_ecfp_private_key_t *privateKey);
-void send_response(uint8_t tx, bool approve);
 
 void writeUint32BE(uint32_t val, uint8_t *bytes);
 void writeUint64BE(uint64_t val, uint8_t *bytes);
@@ -25,7 +21,7 @@ uint8_t convert_hex_amount_to_displayable(const uint8_t* amount, uint8_t decimal
 #define VALIDATE(cond, error) \
     do {\
         if (!(cond)) { \
-            PRINTF("Validation Error in %s: %d\n", __FILE__, __LINE__); \
+            printf("Validation Error in %s: %d\n", __FILE__, __LINE__); \
             THROW(error); \
         } \
     } while(0)
