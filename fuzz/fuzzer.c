@@ -22,7 +22,7 @@ BocContext_t boc_context;
 DataContext_t data_context;
 
 extern int LLVMFuzzerTestOneInput(const uint8_t *buf, size_t len) {
-    if (len < 40) return -1;
+    // if (len < 40) return -1;
 
     BEGIN_TRY {
         TRY {
