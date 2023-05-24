@@ -131,7 +131,8 @@ void deserialize_int_message_header(struct SliceData_t* slice, uint8_t flags, Si
 
     // Amount
     uint8_t amount_length = SliceData_get_next_int(slice, 4);
-    uint8_t amount[amount_length];
+    VALIDATE(amount_length < 16, ERR_INVALID_DATA);
+    uint8_t amount[16];
     deserialize_value(slice, amount, amount_length);
     set_amount(amount, amount_length, flags, ctx->decimals, ctx->ticker);
 
@@ -252,7 +253,7 @@ int deserialize_multisig_params(struct SliceData_t* slice, uint32_t function_id,
 
             // Amount
             uint8_t amount_length = 16;
-            uint8_t amount[amount_length];
+            uint8_t amount[16];
             deserialize_value(slice, amount, amount_length);
 
             uint8_t bounce = SliceData_get_next_bit(slice);
@@ -278,7 +279,7 @@ int deserialize_multisig_params(struct SliceData_t* slice, uint32_t function_id,
 
             // Amount
             uint8_t amount_length = 16;
-            uint8_t amount[amount_length];
+            uint8_t amount[16];
             deserialize_value(slice, amount, amount_length);
 
             uint8_t bounce = SliceData_get_next_bit(slice);
