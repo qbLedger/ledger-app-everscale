@@ -146,9 +146,9 @@ void deserialize_cells_tree(struct ByteStream_t* src) {
     VALIDATE(offset_size != 0 && offset_size <= 8, ERR_INVALID_DATA);
 
     uint8_t cells_count = ByteStream_read_uint(src, ref_size);
+
     uint8_t roots_count = ByteStream_read_uint(src, ref_size);
     VALIDATE(roots_count == MAX_ROOTS_COUNT, ERR_INVALID_DATA);
-    boc_context.cells_count = cells_count;
 
     {
         uint8_t absent_count = ByteStream_read_uint(src, ref_size);
@@ -159,13 +159,22 @@ void deserialize_cells_tree(struct ByteStream_t* src) {
         UNUSED(buf);
     }
 
+    // Reset cells count
+    boc_context.cells_count = 0;
+
     Cell_t cell;
     for (uint8_t i = 0; i < cells_count; ++i) {
+        VALIDATE(i < MAX_CONTRACT_CELLS_COUNT, ERR_INVALID_DATA);
+
         uint8_t* cell_begin = ByteStream_get_cursor(src);
-        Cell_init(&cell, cell_begin);
+        uint8_t cell_length = ByteStream_get_length(src);
+        Cell_init(&cell, cell_begin, cell_length);
         uint16_t offset = deserialize_cell(&cell, i, cells_count);
         boc_context.cells[i] = cell;
         ByteStream_read_data(src, offset);
+
+        // Count only initialized cells
+        boc_context.cells_count++;
 
         if (src->offset >= src->data_size) {
             break;
@@ -194,6 +203,8 @@ void find_public_key_cell() {
     uint16_t bit_len = SliceData_remaining_bits(&key);
     put_to_node(refs[0], bit_len, &key);
 }
+
+#ifndef FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
 
 void compute_wallet_v3_address(uint32_t account_number, uint8_t* address) {
     uint8_t data_hash[HASH_SIZE];
@@ -344,8 +355,8 @@ void compute_multisig_address(uint32_t account_number, const uint8_t* wallet, ui
     SliceData_append(&slice, public_key, PUBLIC_KEY_LENGTH * 8, true);
 
     for (int16_t i = bc->public_key_cell_index; i >= 0; --i) {
-        Cell_t* cell = &bc->cells[i];
-        calc_cell_hash(cell, i);
+        Cell_t* it_cell = &bc->cells[i];
+        calc_cell_hash(it_cell, i);
     }
 
     memcpy(address, bc->hashes, HASH_SIZE);
@@ -428,3 +439,9 @@ void get_address(const uint32_t account_number, uint8_t wallet_type, uint8_t* ad
             THROW(ERR_INVALID_WALLET_TYPE);
     }
 }
+
+#else
+
+void get_address(const uint32_t account_number, uint8_t wallet_type, uint8_t* address) {}
+
+#endif

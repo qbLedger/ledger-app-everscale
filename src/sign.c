@@ -68,10 +68,15 @@ UX_FLOW(ux_sign_flow,
     &ux_sign_flow_4_step
 );
 
-void handleSign(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dataLength, volatile unsigned int *flags, volatile unsigned int *tx) {
+void handleSign(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, __attribute__((unused)) uint16_t dataLength, volatile unsigned int *flags, volatile unsigned int *tx) {
+    UNUSED(p2);
     UNUSED(tx);
 
-    VALIDATE(p1 == P1_CONFIRM && p2 == 0, ERR_INVALID_REQUEST);
+    if (p1 == P1_NON_CONFIRM) {
+        // Don't allow blind signing.
+        THROW(0x6808);
+    }
+
     SignContext_t* context = &data_context.sign_context;
 
     size_t offset = 0;
@@ -92,11 +97,11 @@ void handleSign(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dataLength
 
     if (!context->sign_with_chain_id) {
         memcpy(context->to_sign, dataBuffer + offset, TO_SIGN_LENGTH);
-        snprintf(context->to_sign_str, sizeof(context->to_sign_str), "%.*H", TO_SIGN_LENGTH, context->to_sign);
+        format_hex(context->to_sign, TO_SIGN_LENGTH, context->to_sign_str, sizeof(context->to_sign_str));
     } else {
         memcpy(context->to_sign, context->chain_id, CHAIN_ID_LENGTH);
         memcpy(context->to_sign + CHAIN_ID_LENGTH, dataBuffer + offset, TO_SIGN_LENGTH);
-        snprintf(context->to_sign_str, sizeof(context->to_sign_str), "%.*H", CHAIN_ID_LENGTH + TO_SIGN_LENGTH, context->to_sign);
+        format_hex(context->to_sign, CHAIN_ID_LENGTH + TO_SIGN_LENGTH, context->to_sign_str, sizeof(context->to_sign_str));
     }
 
     ux_flow_init(0, ux_sign_flow, NULL);
